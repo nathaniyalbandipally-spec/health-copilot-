@@ -1,4 +1,3 @@
-
 const fileInput = document.getElementById("reportFile");
 const analyzeBtn = document.getElementById("analyzeBtn");
 const sampleBtn = document.getElementById("sampleBtn");
@@ -70,7 +69,11 @@ analyzeBtn.addEventListener("click", async () => {
       details.textContent =
         "Try a clearer, well-lit image with printed text.";
     } else {
-      summary.replaceChildren();
+      renderOrganizedReport(extractedText);
+
+currentReport = true;
+analyzedCount++;
+recordCount.textContent = analyzedCount;
 
 const heading = document.createElement("strong");
 heading.textContent = "Your report in simple words";
@@ -193,6 +196,191 @@ function createSimpleSummary(text) {
 
   return explanations.join("\n\n") +
     "\n\nImportant: This is a basic explanation of test names, not a diagnosis. OCR can make mistakes. Verify the values and reference ranges against the original report.";
+}
+
+function renderOrganizedReport(text) {
+  const summary = document.getElementById("summary");
+  const details = document.getElementById("details");
+
+  summary.replaceChildren();
+  details.replaceChildren();
+
+  const clean = text.replace(/\s+/g, " ").trim();
+  const lower = clean.toLowerCase();
+
+  // 1. Patient and report details
+  const patientSection = makeSection(
+    details,
+    "👤 Patient & Report Details"
+  );
+
+  addItem(patientSection, "Report type", detectReportType(lower));
+  addItem(patientSection, "Report date", findValue(clean, /Report Date\s*[:|]?\s*([\d]{1,2}-[A-Za-z]{3}-[\d]{4})/i));
+  addItem(patientSection, "Sample type", findValue(clean, /Sample Type\s*[:|]?\s*([A-Za-z ()]+)/i, 50));
+  addItem(patientSection, "Age", findValue(clean, /Age\s*\/?\s*Sex\s*[:|]?\s*(\d+\s*Years?)/i));
+
+  // 2. Extract test result lines
+  const tests = extractTests(clean, lower);
+  const testSection = makeSection(details, "🧪 Test Results");
+
+  if (tests.length) {
+    tests.forEach(test => {
+      addItem(testSection, test.name, test.value);
+    });
+  } else {
+    addItem(
+      testSection,
+      "Results",
+      "Test names could not be reliably separated. Check the original report."
+    );
+  }
+
+  // 3. Explain the test in plain language
+  const meaningSection = makeSection(details, "📘 What It Means");
+
+  if (lower.includes("widal") || lower.includes("typhi")) {
+    addParagraph(
+      meaningSection,
+      "The Widal test looks for antibodies associated with Salmonella bacteria. Antibodies can remain after earlier exposure, and results can be affected by other factors."
+    );
+
+    addParagraph(
+      meaningSection,
+      "A single Widal result cannot reliably confirm an active typhoid infection. A doctor must consider symptoms and other appropriate tests."
+    );
+  } else {
+    addParagraph(
+      meaningSection,
+      "This section explains the purpose of the test where recognized. Compare every result with the reference range printed by the laboratory."
+    );
+  }
+
+  // 4. Final report summary
+  const finalSection = makeSection(summary, "✅ Final Health Summary");
+
+  addParagraph(
+    finalSection,
+    "Report type: " + detectReportType(lower)
+  );
+
+  if (lower.includes("widal") || lower.includes("typhi")) {
+    addParagraph(
+      finalSection,
+      "Main finding: The text contains S. Typhi O and H antibody titres. The report itself describes them as suggestive of infection, but these results alone do not prove that you currently have typhoid."
+    );
+
+    addParagraph(
+      finalSection,
+      "What to do: Discuss the report with a qualified doctor, especially if you have fever, stomach pain, weakness or other symptoms. The doctor can decide whether additional testing is needed."
+    );
+  } else {
+    addParagraph(
+      finalSection,
+      "The report text has been organized, but the app could not safely determine an overall medical conclusion. Ask a healthcare professional to review the results and reference ranges."
+    );
+  }
+
+  addParagraph(
+    finalSection,
+    "Important: OCR can misread numbers and test names. Verify all extracted details against the original report. This summary is educational, not a diagnosis."
+  );
+
+  // Keep the complete OCR text available for verification
+  const originalSection = makeSection(details, "📄 Original Extracted Text");
+  const original = document.createElement("details");
+  const toggle = document.createElement("summary");
+  toggle.textContent = "Show full OCR text";
+  const pre = document.createElement("pre");
+
+  pre.textContent = text;
+  pre.style.whiteSpace = "pre-wrap";
+  pre.style.overflowWrap = "anywhere";
+
+  original.append(toggle, pre);
+  originalSection.appendChild(original);
+}
+
+function makeSection(parent, title) {
+  const section = document.createElement("section");
+  section.style.cssText =
+    "background:#fff;padding:16px;margin:12px 0;border:1px solid #e0ebe7;border-radius:14px;";
+
+  const heading = document.createElement("h3");
+  heading.textContent = title;
+  heading.style.marginTop = "0";
+
+  section.appendChild(heading);
+  parent.appendChild(section);
+
+  return section;
+}
+
+function addItem(parent, label, value) {
+  if (!value) return;
+
+  const row = document.createElement("p");
+  const strong = document.createElement("strong");
+  strong.textContent = label + ": ";
+
+  row.append(strong, document.createTextNode(value));
+  parent.appendChild(row);
+}
+
+function addParagraph(parent, text) {
+  const p = document.createElement("p");
+  p.textContent = text;
+  parent.appendChild(p);
+}
+
+function findValue(text, regex, maxLength = 80) {
+  const match = text.match(regex);
+  return match ? match[1].trim().slice(0, maxLength) : "";
+}
+
+function detectReportType(text) {
+  if (text.includes("widal") || text.includes("typhi")) {
+    return "Widal antibody test";
+  }
+  if (text.includes("hemoglobin") || text.includes("haemoglobin")) {
+    return "Blood test";
+  }
+  if (text.includes("glucose") || text.includes("hba1c")) {
+    return "Blood sugar test";
+  }
+  return "Medical laboratory report";
+}
+
+function extractTests(text, lower) {
+  const tests = [];
+
+  if (lower.includes("widal") || lower.includes("typhi")) {
+    const patterns = [
+      ["S. Typhi O antibody", /S\.?\s*Typhi\s*O\s*Antigen\s*\(TO\)\s*([0-9:./]+)/i],
+      ["S. Typhi H antibody", /S\.?\s*Typhi\s*H\s*Antigen\s*\(TH\)\s*([0-9:./]+)/i],
+      ["S. Paratyphi A antibody", /S\.?\s*Paratyphi\s*A\s*\(AH\)\s*([0-9:./]+)/i],
+      ["S. Paratyphi B antibody", /S\.?\s*Paratyphi\s*B\s*\(BH\)\s*([0-9:./]+)/i]
+    ];
+
+    patterns.forEach(([name, regex]) => {
+      const match = text.match(regex);
+      if (match) {
+        tests.push({
+          name,
+          value: match[1] + " titre (verify against original)"
+        });
+      }
+    });
+
+    const range = text.match(/Reference Range\s*Method\s*\|?\s*([^|]{0,40})/i);
+    if (range) {
+      tests.push({
+        name: "Reference range",
+        value: "Check the original report; OCR may not preserve it correctly."
+      });
+    }
+  }
+
+  return tests;
 }
 
 

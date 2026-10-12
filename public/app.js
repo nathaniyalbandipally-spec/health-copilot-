@@ -70,13 +70,21 @@ analyzeBtn.addEventListener("click", async () => {
       details.textContent =
         "Try a clearer, well-lit image with printed text.";
     } else {
-      summary.textContent =
-        "OCR completed. Extracted text is shown below. Verify it against the original report.";
+      summary.replaceChildren();
 
-      details.textContent = extractedText;
-      currentReport = true;
-      analyzedCount++;
-      recordCount.textContent = analyzedCount;
+const heading = document.createElement("strong");
+heading.textContent = "Your report in simple words";
+summary.appendChild(heading);
+
+const explanation = document.createElement("p");
+explanation.textContent = createSimpleSummary(extractedText);
+summary.appendChild(explanation);
+
+details.textContent = extractedText;
+
+currentReport = true;
+analyzedCount++;
+recordCount.textContent = analyzedCount;
     }
 
     statusText.textContent =
@@ -113,4 +121,78 @@ async function checkBackend() {
 }
 
 checkBackend();
+
+function createSimpleSummary(text) {
+  const lower = text.toLowerCase();
+  const explanations = [];
+
+  if (/haemoglobin|hemoglobin|\bhb\b/.test(lower)) {
+    explanations.push(
+      "Hemoglobin (Hb): This protein in your blood carries oxygen around your body. Check its result against the reference range printed on your report."
+    );
+  }
+
+  if (/glucose|blood sugar|hba1c/.test(lower)) {
+    explanations.push(
+      "Blood sugar: These tests help show the amount of sugar in your blood or your average blood sugar. The meaning depends on the type of test and its reference range."
+    );
+  }
+
+  if (/vitamin\s*d|25.?oh vitamin d/.test(lower)) {
+    explanations.push(
+      "Vitamin D: This test checks your vitamin D level, which helps your body maintain healthy bones. Use the laboratory's reference range to understand the result."
+    );
+  }
+
+  if (/cholesterol|triglyceride|lipid profile/.test(lower)) {
+    explanations.push(
+      "Cholesterol and fats: These tests measure fats in your blood and help assess heart health. Review each result with its reference range."
+    );
+  }
+
+  if (/creatinine|urea|egfr/.test(lower)) {
+    explanations.push(
+      "Kidney tests: These results help assess how your kidneys are working. A healthcare professional can interpret them alongside your other results."
+    );
+  }
+
+  if (/tsh|thyroid/.test(lower)) {
+    explanations.push(
+      "Thyroid test: These results help assess thyroid function. Their meaning depends on the specific test and its reference range."
+    );
+  }
+
+  if (/wbc|white blood cell|leukocyte/.test(lower)) {
+    explanations.push(
+      "White blood cells: These cells help your body fight infections. The result needs to be compared with the laboratory's reference range."
+    );
+  }
+
+  if (/rbc|red blood cell|platelet/.test(lower)) {
+    explanations.push(
+      "Blood cell count: These tests measure different types of blood cells that perform important jobs in your body. Check each result against its reference range."
+    );
+  }
+
+  const flaggedLines = text
+    .split(/\r?\n/)
+    .filter(line =>
+      /\b(high|low|abnormal|critical|positive|negative)\b/i.test(line)
+    )
+    .slice(0, 5);
+
+  if (flaggedLines.length > 0) {
+    explanations.push(
+      "The report contains lines marked High, Low, Abnormal, Critical, Positive, or Negative. Review those lines with a healthcare professional; these words mean different things for different tests."
+    );
+  }
+
+  if (explanations.length === 0) {
+    return "The text was extracted, but the report type or test names were not recognized. Check the extracted text below and ask a healthcare professional to explain the results.";
+  }
+
+  return explanations.join("\n\n") +
+    "\n\nImportant: This is a basic explanation of test names, not a diagnosis. OCR can make mistakes. Verify the values and reference ranges against the original report.";
+}
+
 

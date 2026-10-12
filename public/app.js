@@ -11,108 +11,106 @@ const recordCount = document.getElementById("recordCount");
 let currentReport = null;
 let analyzedCount = 0;
 
-const sampleReport = {
-  type: "DEMO REPORT",
-  date: "12 October 2026",
-  values: [
-    { name: "Hemoglobin", value: "12.5 g/dL" },
-    { name: "Fasting glucose", value: "95 mg/dL" },
-    { name: "Vitamin D", value: "20 ng/mL" }
-  ]
-};
+sampleBtn.addEventListener("click", () => {
+  currentReport = true;
+  fileInput.value = "";
+
+  summary.textContent =
+    "Sample report selected. These are illustrative values, not real patient results.";
+
+  details.textContent =
+    "Hemoglobin: 12.5 g/dL\n" +
+    "Fasting glucose: 95 mg/dL\n" +
+    "Vitamin D: 20 ng/mL\n\n" +
+    "Sample values only. Check the original report's reference ranges.";
+
+  statusText.textContent = "Sample report displayed. No real medical analysis performed.";
+});
+
+analyzeBtn.addEventListener("click", async () => {
+  const file = fileInput.files[0];
+
+  if (!file) {
+    statusText.textContent = "Please select a PNG, JPG, or JPEG image.";
+    return;
+  }
+
+  if (!["image/png", "image/jpeg"].includes(file.type)) {
+    statusText.textContent =
+      "Image OCR only for now. PDF support will be added separately.";
+    return;
+  }
+
+  if (!window.Tesseract) {
+    statusText.textContent =
+      "OCR library failed to load. Check your internet connection and reload.";
+    return;
+  }
+
+  analyzeBtn.disabled = true;
+  sampleBtn.disabled = true;
+  summary.textContent = "OCR is starting...";
+  details.textContent = "";
+  statusText.textContent = "Reading text from your image. Please wait.";
+
+  try {
+    const result = await Tesseract.recognize(file, "eng", {
+      logger: (message) => {
+        if (message.status === "recognizing text") {
+          statusText.textContent =
+            `Recognizing text: ${Math.round(message.progress * 100)}%`;
+        }
+      }
+    });
+
+    const extractedText = result.data.text.trim();
+
+    if (!extractedText) {
+      summary.textContent = "No readable text found.";
+      details.textContent =
+        "Try a clearer, well-lit image with printed text.";
+    } else {
+      summary.textContent =
+        "OCR completed. Extracted text is shown below. Verify it against the original report.";
+
+      details.textContent = extractedText;
+      currentReport = true;
+      analyzedCount++;
+      recordCount.textContent = analyzedCount;
+    }
+
+    statusText.textContent =
+      "OCR finished. No diagnosis or medical interpretation was performed.";
+  } catch (error) {
+    console.error(error);
+    statusText.textContent =
+      "OCR failed. Try a clearer image or reload the page and try again.";
+  } finally {
+    analyzeBtn.disabled = false;
+    sampleBtn.disabled = false;
+  }
+});
+
+language.addEventListener("change", () => {
+  if (language.value === "te") {
+    statusText.textContent =
+      "Telugu interface translation is partial. OCR currently recognizes English text only.";
+  }
+});
 
 async function checkBackend() {
   try {
     const response = await fetch("/api/health");
-    if (!response.ok) throw new Error("Server error");
+    if (!response.ok) throw new Error("Backend unavailable");
 
     const data = await response.json();
-    statusText.textContent =
-      `Backend connected: ${data.project} (${data.mode}).`;
+    if (data.success) {
+      console.log("Health Copilot backend connected:", data.project);
+    }
   } catch (error) {
-    statusText.textContent =
-      "Backend not connected yet. Start and deploy the server to enable this check.";
+    console.warn("Backend health check failed:", error);
   }
 }
-
-sampleBtn.addEventListener("click", () => {
-  currentReport = sampleReport;
-  fileInput.value = "";
-  showReport();
-});
-
-analyzeBtn.addEventListener("click", () => {
-  const file = fileInput.files[0];
-
-  if (!file && !currentReport) {
-    statusText.textContent =
-      "Please upload a report or choose Try Sample Report.";
-    return;
-  }
-
-  if (file) {
-    currentReport = {
-      type: "UPLOADED FILE — NOT YET ANALYZED",
-      name: file.name,
-      size: `${(file.size / 1024).toFixed(1)} KB`,
-      values: []
-    };
-  }
-
-  showReport();
-});
-
-function showReport() {
-  const isTelugu = language.value === "te";
-
-  summary.replaceChildren();
-  details.replaceChildren();
-
-  if (currentReport.type === "DEMO REPORT") {
-    const heading = document.createElement("strong");
-    heading.textContent = isTelugu
-      ? "ఇది నమూనా ఆరోగ్య నివేదిక."
-      : "This is a sample health report.";
-    summary.appendChild(heading);
-
-    const note = document.createElement("p");
-    note.textContent = isTelugu
-      ? "ఇవి ఉదాహరణ విలువలు మాత్రమే. నిజమైన రోగి ఫలితాలు కావు."
-      : "These are illustrative values, not real patient results.";
-    summary.appendChild(note);
-
-    currentReport.values.forEach((item) => {
-      const row = document.createElement("p");
-      row.textContent = `${item.name}: ${item.value}`;
-      details.appendChild(row);
-    });
-
-    const vitDNote = document.createElement("p");
-    vitDNote.textContent = isTelugu
-      ? "విటమిన్ D విలువను అర్థం చేసుకోవడానికి అసలు నివేదికలోని రిఫరెన్స్ పరిధిని చూడండి."
-      : "Check the original report's reference range before interpreting Vitamin D.";
-    details.appendChild(vitDNote);
-  } else {
-    const note = document.createElement("p");
-    note.textContent =
-      "File received: " + (currentReport.name || "Unknown file");
-    summary.appendChild(note);
-
-    const warning = document.createElement("p");
-    warning.textContent =
-      "This file has not been read or medically analyzed. OCR is not implemented yet.";
-    details.appendChild(warning);
-  }
-
-  analyzedCount++;
-  recordCount.textContent = analyzedCount;
-  statusText.textContent =
-    "Demo displayed. No diagnosis or real medical analysis was performed.";
-}
-
-language.addEventListener("change", () => {
-  if (currentReport) showReport();
-});
 
 checkBackend();
 

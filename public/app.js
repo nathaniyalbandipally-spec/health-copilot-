@@ -1,5 +1,4 @@
 
-
 const fileInput = document.getElementById("reportFile");
 const analyzeBtn = document.getElementById("analyzeBtn");
 const sampleBtn = document.getElementById("sampleBtn");
@@ -22,13 +21,27 @@ const sampleReport = {
   ]
 };
 
+async function checkBackend() {
+  try {
+    const response = await fetch("/api/health");
+    if (!response.ok) throw new Error("Server error");
+
+    const data = await response.json();
+    statusText.textContent =
+      `Backend connected: ${data.project} (${data.mode}).`;
+  } catch (error) {
+    statusText.textContent =
+      "Backend not connected yet. Start and deploy the server to enable this check.";
+  }
+}
+
 sampleBtn.addEventListener("click", () => {
   currentReport = sampleReport;
   fileInput.value = "";
   showReport();
 });
 
-analyzeBtn.addEventListener("click", async () => {
+analyzeBtn.addEventListener("click", () => {
   const file = fileInput.files[0];
 
   if (!file && !currentReport) {
@@ -38,9 +51,6 @@ analyzeBtn.addEventListener("click", async () => {
   }
 
   if (file) {
-    statusText.textContent =
-      "Reading file details. OCR processing will be added next.";
-
     currentReport = {
       type: "UPLOADED FILE — NOT YET ANALYZED",
       name: file.name,
@@ -79,8 +89,8 @@ function showReport() {
 
     const vitDNote = document.createElement("p");
     vitDNote.textContent = isTelugu
-      ? "విటమిన్ D విలువకు సరైన అర్థం తెలుసుకోవడానికి నివేదికలోని రిఫరెన్స్ పరిధిని పరిశీలించాలి."
-      : "For Vitamin D, check the report's reference range before interpreting the value.";
+      ? "విటమిన్ D విలువను అర్థం చేసుకోవడానికి అసలు నివేదికలోని రిఫరెన్స్ పరిధిని చూడండి."
+      : "Check the original report's reference range before interpreting Vitamin D.";
     details.appendChild(vitDNote);
   } else {
     const note = document.createElement("p");
@@ -90,7 +100,7 @@ function showReport() {
 
     const warning = document.createElement("p");
     warning.textContent =
-      "The file has not been read or medically analyzed yet. OCR and report extraction are not implemented.";
+      "This file has not been read or medically analyzed. OCR is not implemented yet.";
     details.appendChild(warning);
   }
 
@@ -103,3 +113,6 @@ function showReport() {
 language.addEventListener("change", () => {
   if (currentReport) showReport();
 });
+
+checkBackend();
+

@@ -255,3 +255,35 @@ footer {
     width: 100%;
   }
 }
+
+#summary h3,
+#details h3 {
+  color: #087f6e;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+#summary p,
+#details p {
+  font-size: 15px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+#summary section {
+  background: #eff9f4 !important;
+  border-color: #b8e5d2 !important;
+}
+
+#details pre {
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+#details details summary {
+  color: #087f6e;
+  cursor: pointer;
+  font-weight: bold;
+}
+

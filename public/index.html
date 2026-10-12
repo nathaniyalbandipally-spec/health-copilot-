@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Health Copilot</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">+</span>
+      <div>
+        <h2>Health Copilot</h2>
+        <p>Your personal health assistant</p>
+      </div>
+    </div>
+    <span class="demo">DEMO MODE</span>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <p class="eyebrow">YOUR HEALTH, SIMPLIFIED</p>
+      <h1>Understand your health records with AI.</h1>
+      <p>Upload a medical report to explore health information in simple language.</p>
+      <div class="notice">
+        Demo only — not connected to ABDM or ABHA.
+        Use synthetic medical records only.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>📄 Medical Record Intelligence</h2>
+      <p>Choose a sample report or upload a document for the prototype.</p>
+
+      <label for="reportFile">Upload a report</label>
+      <input id="reportFile" type="file"
+        accept=".pdf,.png,.jpg,.jpeg,.txt">
+
+      <div class="actions">
+        <button id="analyzeBtn">Analyze Report</button>
+        <button id="sampleBtn" class="secondary">Try Sample Report</button>
+      </div>
+      <p id="status" class="status">Ready to analyze a demo report.</p>
+    </section>
+
+    <section class="card">
+      <h2>🩺 Health Summary</h2>
+      <div id="summary" class="result">
+        Your health summary will appear here.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>📊 Extracted Health Information</h2>
+      <div id="details" class="result">
+        No report analyzed yet.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🌐 Language</h2>
+      <p>Choose your preferred language for the demo summary.</p>
+      <select id="language">
+        <option value="en">English</option>
+        <option value="te">తెలుగు (Telugu)</option>
+      </select>
+    </section>
+
+    <section class="card">
+      <h2>🔐 Unified Health Profile</h2>
+      <p>Future-ready structure for organizing medical records in one timeline.</p>
+      <div class="profile-item">
+        <span>Medical records</span>
+        <strong id="recordCount">0</strong>
+      </div>
+      <div class="profile-item">
+        <span>ABHA integration</span>
+        <strong>Demo only</strong>
+      </div>
+      <div class="profile-item">
+        <span>FHIR-style data</span>
+        <strong>Planned</strong>
+      </div>
+    </section>
+
+    <p class="disclaimer">
+      This prototype is for demonstration only and does not provide a
+      diagnosis or replace a qualified healthcare professional.
+      Verify extracted information with the original report.
+    </p>
+  </main>
+
+  <footer>Built for the AI Health Copilot hackathon prototype</footer>
+  <script src="app.js"></script>
+</body>
+</html>
